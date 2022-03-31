@@ -32,23 +32,23 @@ def generate_forecasts(test_df):
     
     predictions_df = test_df.copy()
     X_test = test_df.copy().drop(['demand', 'timeStamp'], axis=1)
-    
+
     # Iterate over future time steps
     for n in range(1, H+1):
-        predictions_df['pred_t+'+str(n)] = model.predict(X_test)
-        
+        predictions_df[f'pred_t+{str(n)}'] = model.predict(X_test)
+
         # shift lagged demand features...
         shift_demand_features(X_test)
-        
+
         # ...and replace demand_lag1 with latest prediction
-        X_test['demand_lag1'] = predictions_df['pred_t+'+str(n)]
-        
+        X_test['demand_lag1'] = predictions_df[f'pred_t+{str(n)}']
+
     return predictions_df
 
 
 def shift_demand_features(df):
     for i in range(H, 1, -1):
-        df['demand_lag'+str(i)] = df['demand_lag'+str(i-1)]
+        df[f'demand_lag{str(i)}'] = df[f'demand_lag{str(i-1)}']
 
 
 def evaluate_forecast(predictions_df, n):
@@ -57,29 +57,27 @@ def evaluate_forecast(predictions_df, n):
     '''
 
     y_true = predictions_df['demand']
-    y_pred = predictions_df['pred_t+'+str(n)]
+    y_pred = predictions_df[f'pred_t+{str(n)}']
     error = y_pred - y_true
-    
-    metrics = {}
-    
-    # forecast bias
-    metrics['ME'] = error.mean()
+
+    metrics = {'ME': error.mean()}
+
     metrics['MPE'] = 100 * (error / y_true).mean()
-    
+
     # forecast error
     #MSE = mean_squared_error(y_true, y_pred)
     metrics['MSE'] = (error**2).mean()
     metrics['RMSE'] = metrics['MSE']**0.5
     metrics['MAPE'] = 100 * (error.abs() / y_true).mean()
     metrics['sMAPE'] = 200 * (error.abs() / y_true).mean()
-    
+
     # relative error
-    naive_pred = predictions_df['demand_lag'+str(n)]
+    naive_pred = predictions_df[f'demand_lag{str(n)}']
     naive_error = naive_pred - y_true
     RE = error / naive_error
     metrics['MAPE_base'] = 100 * (naive_error.abs() / y_true).mean()
     metrics['MdRAE'] = np.median(RE.abs())
-    
+
     return metrics
 
 

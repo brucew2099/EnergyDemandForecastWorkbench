@@ -12,4 +12,4 @@ models = ['linear_regression',
     "gbm"]
 
 for model in models:
-    os.system('az ml experiment submit -c local ./8-evaluate-model.py {}'.format(model))
+    os.system(f'az ml experiment submit -c local ./8-evaluate-model.py {model}')
